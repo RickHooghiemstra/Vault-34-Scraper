@@ -124,6 +124,20 @@ def _from_title(title: str) -> tuple[str, str, str]:
     if year_m:
         year = year_m.group(1)
 
+    # 2-digit year formats used by some brands, e.g. "Z 750 S/R, 07-12" or "Z 900, 17-"
+    # Only match after a comma/space with digits plausibly in the 2000s (00–35).
+    if not year:
+        m2 = re.search(r"(?:,\s*|\s)([0-2]\d)-([0-2]\d)(?:\s|$)", title)
+        if m2:
+            y1, y2 = int(m2.group(1)), int(m2.group(2))
+            if y1 <= y2 <= 35:
+                year = f"20{m2.group(1)}-20{m2.group(2)}"
+        else:
+            # "17-" at end (open-ended range)
+            m3 = re.search(r"(?:,\s*)([0-2]\d)-\s*$", title)
+            if m3:
+                year = f"20{m3.group(1)}+"
+
     # Make — scan MOTO_MAKES (exhaust brands are deliberately excluded)
     for mk in MOTO_MAKES:
         if re.search(rf"\b{re.escape(mk)}\b", title, re.I):
